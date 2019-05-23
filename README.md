@@ -1,6 +1,6 @@
 # Rockchip Debian SDK
 
-Below is the instructions of how to build image for ROCK Pi 4.
+Below is the instructions of how to build image for Rockchip platform.
 
 ## Get the source code
 
@@ -24,7 +24,7 @@ Install Git if you don't have it.
 Clone the source code
 
     $ cd ~
-    $ git clone --recursive https://github.com/radxa/rockchip-bsp.git
+    $ git clone --recursive https://github.com/96rocks/rockchip-bsp.git
 
 You will get 
 
@@ -52,9 +52,9 @@ Directories usage introductions:
 
 ## Build images
 
-Two methods of building images will be shown in the next parts. One uses Docker (Part one) and the other doesn't (Part two). Just select one part and start to build your wanted images.
+Two methods of building images will be shown in the next parts. One uses Docker (Option one) and the other doesn't (Part two). Just select one part and start to build your wanted images.
 
-### Part one
+### Option one: build in container
 
 #### Install Docker
 
@@ -89,15 +89,15 @@ Go to the docker folder.
 
     $ cd ~/rockchip-bsp/docker
 
-Build a Docker image, called rockchip-radxa:1.
+Build a Docker image, called rockchip-docker:1.
 
-    $ sudo docker build -t rockchip-radxa:1 -f ./Dockerfile .
+    $ sudo docker build -t rockchip-docker:1 -f ./Dockerfile .
 
-Now the Docker image, rockchip-radxa:1, is ready. You just need to build Docker image once. Everytime you want to build images, just run a Docker container.
+Now the Docker image, rockchip-docker:1, is ready. You just need to build Docker image once. Everytime you want to build images, just run a Docker container.
 
 #### Run a Docker container
 
-    $ docker run -it -v /home/jack/rockchip-bsp:/root rockchip-radxa:1 /bin/bash
+    $ docker run -it -v /home/jack/rockchip-bsp:/root rockchip-docker:1 /bin/bash
 
 Now the Docker container should be running.
 
@@ -110,7 +110,8 @@ Here Docker bind mounts /home/jack/rockchip-bsp in the host to /root in the Dock
 #### Build u-boot
 
     # cd /root
-    # ./build/mk-uboot.sh rockpi4b     #For ROCK Pi 4 Mode B
+    # ./build/mk-uboot.sh rock960ab     #For ROCK960 model A or B
+    # ./build/mk-uboot.sh rock960c      #For ROCK960 model C
 
 The generated images will be copied to out/u-boot folder
 
@@ -119,12 +120,13 @@ The generated images will be copied to out/u-boot folder
 
 #### Build kernel
 
-    # ./build/mk-kernel.sh rockpi4b    #For ROCK Pi 4 Mode B
+    # ./build/mk-kernel.sh rock960ab    #For ROCK960 model A or B
+    # ./build/mk-kernel.sh rock960c     #For ROCK960 model C
 
 You will get the kernel image and dtb file
 
     # ls out/kernel/
-    Image  rockpi-4b-linux.dtb
+    Image  rock860-model-ab-linux.dtb
 
 #### Make rootfs image
 
@@ -167,7 +169,7 @@ After getting all the wanted images, exit Docker;
 
 In the host, all generated images are in the ~/rockchip-bsp/out directory.
 
-### Part two
+### Option two: build natively
 
 When you don't want to use Docker to build images, you can try this way.
 
@@ -180,7 +182,8 @@ Note that if you just used Docker to build the images, then you can't wait to tr
 #### Build u-boot/
 
     $ cd ~/rockchip-bsp
-    $ ./build/mk-uboot.sh rockpi4b     #For ROCK Pi 4 Mode B
+    $ ./build/mk-uboot.sh rock960ab     #For ROCK960 Model A or B
+    $ ./build/mk-uboot.sh rock960c      #For ROCK960 Model C
 
 The generated images will be copied to out/u-boot folder
 
@@ -189,12 +192,13 @@ The generated images will be copied to out/u-boot folder
 
 #### Build kernel
 
-    $ ./build/mk-kernel.sh rockpi4b    #For ROCK Pi 4 Mode B
+    $ ./build/mk-kernel.sh rock960ab    #For ROCK960 Model A or B
+    $ ./build/mk-kernel.sh rock960c     #For ROCK960 Model C
 
 You will get the kernel image and dtb file
 
     $ ls out/kernel/
-    Image  rockpi-4b-linux.dtb
+    Image  rock960-model-ab-linux.dtb
 
 #### Make rootfs image
 
@@ -232,11 +236,22 @@ This will combine u-boot, kernel and rootfs into one image and generate GPT part
 
 ## Flash the image
 
-For normal users, follow instructions [installation](http://wiki.radxa.com/Rockpi4/install). You will need the generated '''out/system.img''' only.
-
-For developers, flash from USB OTG port, follow instructions [usb-installation](http://wiki.radxa.com/Rockpi4/dev/usb-install). You will need the flash helper '''rk3399_loader_xxx.bin''' and generated '''out/system.img''' files.
+Follow instructions [install with rkdeveloptool](https://www.96boards.org/documentation/consumer/rock/installation/linux-mac-rkdeveloptool.md.html). You will need the flash helper '''rk3399_loader_xxx.bin''' and generated '''out/system.img''' files.
 
 ## Troubleshooting
 
-Go to [ROCK Pi 4 FAQs](http://wiki.radxa.com/Rockpi4/FAQs)
 
+
+### "Creating Comm Object failed!"
+
+After run any command of rkdeveloptool, it keeps complaining
+
+    "Creating Comm Object failed!"
+
+It's permission issue, you can run the following command to set the udev rule:
+
+	    echo 'SUBSYSTEM=="usb", ATTR{idVendor}=="2207", MODE="0666",GROUP="plugdev"' | sudo tee /etc/udev/rules.d/51-android.rules
+
+Or use `sudo` before rkdeveloptool command
+
+If this doesn't fix the problem, it might be a USB3 power/signal issue, if you are using a USB3 hub, please directly connect to the USB3 port of the mother board at the back, not the front panel USB3 port.
